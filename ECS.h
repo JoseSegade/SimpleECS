@@ -7,6 +7,7 @@
 #include <typeinfo>
 #include <set>
 #include <memory>
+#include <iterator>
 
 namespace ECS
 {
@@ -44,7 +45,7 @@ namespace ECS
 
         inline void Create(Entity entity) override
         {
-            assert(entity != INVALID_ENTITY);
+            assert(entity != INVALID);
             assert(mEntityToIndexMap.count(entity) == 0);
             assert(mEntities.size() == mComponents.size());
             assert(mEntityToIndexMap.size() == mComponents.size());
@@ -59,7 +60,7 @@ namespace ECS
 
         inline void Remove(Entity entity)
         {
-            assert(entity != INVALID_ENTITY);
+            assert(entity != INVALID);
             assert(mEntityToIndexMap.count(entity) > 0);
 
             size_t indexRemoved = mEntityToIndexMap.at(entity);

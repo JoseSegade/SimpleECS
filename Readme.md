@@ -13,10 +13,10 @@ Simple file implementing an Entity Component System for fast prototyping. Writte
 ^* Note custom systems must inherit from `ECSSystem` to specify the dependencies.
 
 - `Register` functions:
-  - `AddComponents<...components>(Entity)`: binds new component/s of the specified type to an existing entity. Cannot add an unregister component.
-  - `RegisterComponent<component>()`: stores component types.
-  - `RemoveComponent<component>(Entity)`: removes an existing component from an entity. Also removes the entity from all systems using it.
-  - `GetComponent<component>(Entity)`: obtains the component object from an entity. Entity must have a component binded previously.
+  - `AddComponents<...Components>(Entity)`: binds new component/s of the specified type to an existing entity. Cannot add an unregister component.
+  - `RegisterComponent<Component>()`: stores component types.
+  - `RemoveComponent<Component>(Entity)`: removes an existing component from an entity. Also removes the entity from all systems using it.
+  - `GetComponent<Component>(Entity)`: obtains the component object from an entity. Entity must have a component binded previously.
   - `RegisterSystem<System>()`: creates a new system. When a system is registered will consume **ONLY** the entities binded with at least one component marked as dependency in `ECSSystem` class header.
 
 ## Usage example:
@@ -82,9 +82,9 @@ int main()
    auto system = reg.RegisterSystem<MySystem>();
 
    system->Init();
-   for(double i = 0.0; i < 25.0; i+=1.0)
+   for(double i = 0.0; i < 25.0; i += 1.0)
    {
-      system->Update(static_cast<double>(i));
+      system->Update(i);
    }
 
 
