@@ -16,7 +16,7 @@ namespace ECS
     static const Entity INVALID = 0;
     static std::atomic<Entity> next{INVALID + 1};
 
-    Entity CreateEntity()
+    static Entity CreateEntity()
     {
         return next.fetch_add(1);
     }
