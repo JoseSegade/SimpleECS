@@ -14,7 +14,7 @@ namespace ECS
     using Entity = std::uint32_t;
 
     static const Entity INVALID = 0;
-    static std::atomic<Entity> next{INVALID + 1};
+    static std::atomic<Entity> next{ INVALID + 1 };
 
     static Entity CreateEntity()
     {
@@ -28,7 +28,7 @@ namespace ECS
 
         virtual bool Contains(Entity entity) = 0;
         virtual void OnEntityDestroyed(Entity entity) = 0;
-        virtual std::vector<Entity> &Entities() = 0;
+        virtual std::vector<Entity>& Entities() = 0;
         virtual void Create(Entity entity) = 0;
     };
 
@@ -54,8 +54,6 @@ namespace ECS
 
             mComponents.emplace_back();
             mEntities.push_back(entity);
-
-            mComponents.back();
         }
 
         inline void Remove(Entity entity)
@@ -83,7 +81,7 @@ namespace ECS
             return mEntityToIndexMap.count(entity) > 0;
         }
 
-        T &Get(Entity entity)
+        T& Get(Entity entity)
         {
             assert(mEntityToIndexMap.count(entity) > 0);
 
@@ -98,7 +96,7 @@ namespace ECS
             }
         }
 
-        inline std::vector<Entity> &Entities() override
+        inline std::vector<Entity>& Entities() override
         {
             return mEntities;
         }
@@ -119,14 +117,14 @@ namespace ECS
         System() = default;
         virtual ~System() = default;
 
-        virtual void Init(){};
-        virtual void Update(double dt){};
+        virtual void Init() {};
+        virtual void Update(double dt) {};
 
-        virtual void SetRegister(Register *thatRegister) = 0;
+        virtual void SetRegister(Register* thatRegister) = 0;
         virtual void AddEntity(Entity entity) = 0;
         virtual void RemoveEntity(Entity entity) = 0;
         virtual std::vector<std::string> GetComponentDependencies() = 0;
-        virtual void AddEntities(const std::vector<Entity> &entities) = 0;
+        virtual void AddEntities(const std::vector<Entity>& entities) = 0;
     };
     template <typename... Cs>
     class ECSSystem : public System
@@ -145,24 +143,24 @@ namespace ECS
             mEntities.erase(entity);
         }
 
-        inline std::vector<std::string> GetComponentDependencies()
+        inline std::vector<std::string> GetComponentDependencies() override
         {
-            return {typeid(Cs).name()...};
+            return { typeid(Cs).name()... };
         }
 
-        inline void AddEntities(const std::vector<Entity> &entities)
+        inline void AddEntities(const std::vector<Entity>& entities) override
         {
             std::copy(entities.begin(), entities.end(), std::inserter(mEntities, mEntities.end()));
         }
 
-        inline void SetRegister(Register *thatRegister)
+        inline void SetRegister(Register* thatRegister) override
         {
             mRegister = thatRegister;
         }
 
     protected:
         std::set<Entity> mEntities;
-        Register *mRegister;
+        Register* mRegister;
     };
 
     class Register
@@ -172,11 +170,11 @@ namespace ECS
 
         inline void ClearEntity(Entity entity)
         {
-            for (auto &[_, components] : mComponents)
+            for (auto& [_, components] : mComponents)
             {
                 components->OnEntityDestroyed(entity);
             }
-            for (auto &[_, system] : mSystems)
+            for (auto& [_, system] : mSystems)
             {
                 system->RemoveEntity(entity);
             }
@@ -193,8 +191,8 @@ namespace ECS
         template <typename... Cs>
         inline void AddComponents(Entity entity)
         {
-            std::vector<std::string> componentNames = {typeid(Cs).name()...};
-            for (const std::string &componentName : componentNames)
+            std::vector<std::string> componentNames = { typeid(Cs).name()... };
+            for (const std::string& componentName : componentNames)
             {
                 auto it = mComponents.find(componentName);
                 if (it != mComponents.end())
@@ -214,33 +212,47 @@ namespace ECS
         }
 
         template <typename C>
-        inline C &GetComponent(Entity entity)
+        inline C& GetComponent(Entity entity)
         {
             return GetAsComponentArray<C>()->Get(entity);
         }
 
-        template <class T>
-        inline System *RegisterSystem()
+        template <class T, typename...A>
+        inline T& RegisterSystem(A&&... args)
         {
             std::string systemName = typeid(T).name();
 
-            mSystems.emplace(systemName, std::make_unique<T>());
-            auto &sys = mSystems.at(systemName);
+            mSystems.emplace(systemName, std::make_unique<T>(std::forward<A>(args)...));
+            auto& sys = mSystems.at(systemName);
 
             sys->SetRegister(this);
             auto dependencies = sys->GetComponentDependencies();
 
-            for (const std::string &dep : dependencies)
+            for (const std::string& dep : dependencies)
             {
                 sys->AddEntities(mComponents.at(dep)->Entities());
             }
 
-            return mSystems.at(systemName).get();
+            return *reinterpret_cast<T*>(mSystems.at(systemName).get());
+        }
+
+        template <class T>
+        inline System& GetSystem()
+        {
+            std::string systemName = typeid(T).name();
+            return *mSystems.at(systemName);
+        }
+
+        template<class T>
+        inline T& GetSystemAs()
+        {
+            std::string systemName = typeid(T).name();
+            return *reinterpret_cast<T*>(mSystems.at(systemName).get());
         }
 
     private:
         template <typename C>
-        inline ComponentArray<C> *GetAsComponentArray()
+        inline ComponentArray<C>* GetAsComponentArray()
         {
             const std::string componentName = typeid(C).name();
             assert(mComponents.count(componentName) > 0);
